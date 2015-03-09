@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Compose</title>
+</head>
+<body>
+  <h1>Compose</h1>
+  <button id="play">Play</button>
+
+  <script src="dist/main.js"></script>
+  <script>
+    var compose = require('compose');
+    var par  = compose.score.par;
+    var seq  = compose.score.seq;
+    var play = compose.player.play;
+
+    var score = par(
+      "c3 d3 e3 c3 c3 d3 e3 c3 e3 f3 g3/2 e3 f3 g3/2",
+      "c2/2  b1/2  a1/2  g1/2  c2/2  d2/2 e2/1"
+    );
+
+    document.getElementById("play").onclick = function() {
+      play(score, { tempo: 120, transpose: 24 });
+    };
+  </script>
+</body>
+</html>
