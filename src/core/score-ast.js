@@ -7,6 +7,9 @@ export class Note extends Score {
     this.duration = duration;
   }
 
+  // Syntax for dotted notes.
+  //
+  // -> Note
   get d()   { return new Note(this.pitch, this.duration.d);   }
   get dd()  { return new Note(this.pitch, this.duration.dd);  }
   get ddd() { return new Note(this.pitch, this.duration.ddd); }
@@ -18,6 +21,9 @@ export class Rest extends Score {
     this.duration = duration;
   }
 
+  // Syntax for dotted notes.
+  //
+  // -> Note
   get d()   { return new Rest(this.duration.d);   }
   get dd()  { return new Rest(this.duration.dd);  }
   get ddd() { return new Rest(this.duration.ddd); }
