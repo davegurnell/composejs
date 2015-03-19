@@ -1,23 +1,17 @@
-# ComposeJS
+# ComposeJS: Compositional Graphics
 
-ES6 port of [Compose][compose].
+by Dave Gurnell of [Underscore](http://underscore.io).
 
-## Installation
+Javascript port of [Compose](https://github.com/underscoreio/compose),
+a library for compositional music composition.
 
-~~~ bash
-bash$ npm install -g browserify
-bash$ npm install
-~~~
+# License
 
-## Building
+Apache 2.0. See LICENSE for more information.
 
-~~~ bash
-bash$ ./build.sh
-~~~
+# Acknowledgements
 
-## Running
-~~~ bash
-bash$ open ./index.html
-~~~
+Compose was written by Dave Gurnell with contributions from Noel Welsh,
+Jono Ferguson, Richard Dallaway, and others.
 
-[compose]: https://github.com/underscoreio/compose
+See the README on the Compose home page for more information.

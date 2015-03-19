@@ -1,3 +1,4 @@
 #!/usr/bin/env bash
 
-watchify  --require ./src/main.js:compose --outfile dist/main.js --transform babelify --debug --watch
+mkdir -p ./dist
+watchify --require ./src/index.js:compose --require ./src/demo.js:demo --outfile dist/demo.js  --transform babelify --debug

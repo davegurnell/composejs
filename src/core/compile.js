@@ -1,10 +1,17 @@
-import { EmptyScore, NoteScore, RestScore, ParScore, SeqScore } from './score';
+import {
+  Note,
+  Rest, 
+  Parallel,
+  Sequence,
+  Arrangement
+} from './score';
 
 export class Command {}
 
 export class NoteOn extends Command {
-  constructor(pitch) {
-    this.pitch = pitch;
+  constructor(pitch, instrument) {
+    this.pitch      = pitch;
+    this.instrument = instrument;
   }
 }
 
@@ -14,21 +21,23 @@ export class Wait extends Command {
   }
 }
 
-// score -> arrayOf(command)
-export function compile(score) {
-  if(score instanceof NoteScore) {
+// score instrument -> arrayOf(command)
+export function compile(score, instrument) {
+  if(score instanceof Note) {
     return [
-      new NoteOn(score.pitch),
+      new NoteOn(score.pitch, instrument),
       new Wait(score.duration)
     ];
-  } else if(score instanceof RestScore) {
+  } else if(score instanceof Rest) {
     return [
-      new Wait(score.duration)
+      new Wait(score.duration, instrument)
     ];
-  } else if(score instanceof SeqScore) {
-    return compile(score.a).concat(compile(score.b));
-  } else if(score instanceof ParScore) {
-    return merge(compile(score.a), compile(score.b));
+  } else if(score instanceof Sequence) {
+    return compile(score.a, instrument).concat(compile(score.b, instrument));
+  } else if(score instanceof Parallel) {
+    return merge(compile(score.a, instrument), compile(score.b, instrument));
+  } else if(score instanceof Arrangement) {
+    return compile(score.score, score.instrument);
   } else {
     return [];
   }
