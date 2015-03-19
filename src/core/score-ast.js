@@ -40,9 +40,9 @@ export class Parallel extends Score {
 }
 
 export class Arrangement extends Score {
-  // Instrument Score -> Score
-  constructor(instrument, score) {
-    this.instrument = instrument;
+  // Score Instrument -> Score
+  constructor(score, instrument) {
     this.score      = score;
+    this.instrument = instrument;
   }
 }

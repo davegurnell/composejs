@@ -51,12 +51,40 @@ export const rest = {
   }
 }
 
-export function arrange(score, instrument) {
-  return new Arrangement(score, instrument);
+function createExpr(createPair) {
+  return (a, ...b) => {
+    console.log('reducing', a, b);
+    return _.reduce(b, createPair, a);
+  };
 }
 
+const internalSeq = createExpr((a, b) => new Sequence(a, b));
+const internalPar = createExpr((a, b) => new Parallel(a, b));
+
+// Or(Score String) -> Score
+function wrapScore(arg) {
+  return (typeof arg == "string") ? parse(arg) : arg;
+}
+
+// Or(Score String)... -> Score
+export function seq(...args) {
+  return internalSeq.apply(this, _.map(args, wrapScore));
+}
+
+// Or(Score String)... -> Score
+export function par(...args) {
+  return internalPar.apply(this, _.map(args, wrapScore));
+}
+
+// Or(Score String) Instrument -> Score
+export function arrange(score, instrument) {
+  return new Arrangement(wrapScore(score), instrument);
+}
+
+// Or(Score String) Number -> Score
 export function transpose(score, offset) {
-  console.log('transpose', score, offset);
+  score = wrapScore(score);
+
   if(score instanceof Note) {
     return new Note(
       score.pitch.transpose(offset),
@@ -84,25 +112,7 @@ export function transpose(score, offset) {
   }
 }
 
-function createExpr(createPair) {
-  return (a, ...b) => _.reduce(b, createPair, a);
-}
-
-function wrapExpr(unwrappedExpr) {
-  function wrapArg(arg) {
-    return (typeof arg == "string") ? parse(arg) : arg;
-  }
-
-  return (...args) =>
-    unwrappedExpr.apply(this, _.map(args, wrapArg));
-}
-
-const internalPar = createExpr((a, b) => new Parallel(a, b));
-const internalSeq = createExpr((a, b) => new Sequence(a, b));
-
-export const par = wrapExpr(internalPar);
-export const seq = wrapExpr(internalSeq);
-
+// String -> Score
 export function parse(str) {
   let strings = str.toLowerCase().split(/[,;\s]+/);
   let scores = [];
@@ -115,6 +125,7 @@ export function parse(str) {
   return internalSeq.apply(this, scores);
 }
 
+// String -> Score
 function parseOne(str) {
   let noteMatch = str.match(/^([a-g]s?\d)(?:[.]([tseqhw](?:[.][d]{1,3})?))?$/i);
   if(noteMatch) {

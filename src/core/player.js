@@ -1,6 +1,14 @@
-import { Command, NoteOn, Wait, compile } from './compile';
-import { default as Q } from 'q';
-import { default as _ } from 'underscore';
+import Q from 'q';
+import _ from 'underscore';
+
+import {
+  Score,
+  Note,
+  Rest,
+  Sequence,
+  Parallel,
+  Arrangement
+} from './score';
 
 const defaults = {
   context    : new AudioContext(),
@@ -9,30 +17,45 @@ const defaults = {
   transpose  : 0
 };
 
-// ArrayOf(Command) [String] [Number] [Number] -> Promise
+// Score [String] [Number] [Number] -> Promise
 export function play(score, config = {}) {
   config = _.extend(defaults, config);
 
-  let commands = compile(score, defaults.instrument);
-  
-  let instruments = _.chain(commands)
-    .filter(cmd => cmd instanceof NoteOn)
-    .map(cmd => cmd.instrument)
-    .uniq()
-    .value();
+  score = new Arrangement(score, config.instrument);
 
-  return loadInstruments(config, instruments).
-    then(buffers => _.extend(config, { buffers: buffers })).
-    then(config => playCommands(commands, config));
+  return loadInstruments(config, instruments(score), config).
+    then(buffers => _.extend({}, config, { buffers: buffers })).
+    then(config => playScore(score, config)).
+    catch(exn => console.error(exn)).
+    finally(() => console.log("Playback finished"));
+}
+
+// Score -> ArrayOf(Instrument)
+function instruments(score) {
+  if(score instanceof Note) {
+    return [];
+  } else if(score instanceof Rest) {
+    return [];
+  } else if(score instanceof Sequence) {
+    return _.uniq(instruments(score.a).concat(instruments(score.b)));
+  } if(score instanceof Parallel) {
+    return _.uniq(instruments(score.a).concat(instruments(score.b)));
+  } else if(score instanceof Arrangement) {
+    return _.uniq([ score.instrument ].concat(instruments(score.score)));
+  } else {
+    throw new Error("instruments(): score not recognised: " + score);
+  }
 }
 
 // ConfigObject ArrayOf(Instrument) -> MapOf(Instrument, PromiseOf(AudioBuffer))
 function loadInstruments(config, instruments) {
+  console.log('loadInstruments', instruments);
+
   let promises = _.map(instruments, (instrument) =>
     loadInstrument(config, instrument));
 
-  return Q.all(promises).then((buffers) =>
-    _.object(_.zip(instruments, buffers)));
+  return Q.all(promises).
+    then((buffers) => _.object(_.zip(instruments, buffers)));
 }
 
 // ConfigObject Instrument -> PromiseOf(AudioBuffer)
@@ -47,35 +70,50 @@ function loadInstrument(config, instrument) {
   request.responseType = 'arraybuffer';
 
   request.onload = event => 
-    config.context.decodeAudioData(request.response, buffer => result.resolve(buffer));
+    config.context.decodeAudioData(request.response, buffer => 
+      result.resolve(buffer));
 
   request.send();
 
   return result.promise;
 }
 
-// ArrayOf(Command) ConfigObject -> Promise
-function playCommands(commands, config) {
-  if(commands.length == 0) {
-    return Q.fcall(_ => "Done");
+// Score ConfigObject -> Promise
+function playScore(score, config) {
+  if(score instanceof Note) {
+    return playSample(score.pitch, config).
+      then(_ => playWait(score.duration, config));
+
+  } else if(score instanceof Rest) {
+    return playWait(score.duration, config);
+
+  } else if(score instanceof Sequence) {
+    return playScore(score.a, config).
+      then(_ => playScore(score.b, config));
+
+  } else if(score instanceof Parallel) {
+    return Q.all([
+      playScore(score.a, config),
+      playScore(score.b, config)
+    ]);
+
+  } else if(score instanceof Arrangement) {
+    return playScore(
+      score.score,
+      _.extend({}, config, { instrument: score.instrument })
+    );
+
   } else {
-    let [ head, ...tail ] = commands;
-    if(head instanceof NoteOn) {
-      return playNote(head, config).
-        then(_ => playCommands(tail, config));
-    } else {
-      return playWait(head, config).
-        then(_ => playCommands(tail, config));
-    }
+    throw new Error("playScore(): score not recognised: " + score);
   }
 }
 
-// Note ConfigObject -> Promise
-function playNote(note, config) {
+// Pitch ConfigObject -> Promise
+function playSample(pitch, config) {
   return Q.fcall(_ => {
     let source = config.context.createBufferSource();
-    let freq   = frequency(note.pitch, config.transpose);
-    source.buffer = config.buffers[note.instrument];
+    let freq   = frequency(pitch, config.transpose);
+    source.buffer = config.buffers[config.instrument];
     source.connect(config.context.destination);
     source.playbackRate.setValueAtTime(freq / 440, 0);
     source.start(0);
@@ -83,9 +121,9 @@ function playNote(note, config) {
   });
 }
 
-// Note ConfigObject -> Promise
-function playWait(note, config) {
-  return Q.delay(milliseconds(note.duration, config.tempo));
+// Duration ConfigObject -> Promise
+function playWait(duration, config) {
+  return Q.delay(milliseconds(duration, config.tempo));
 }
 
 // Pitch [Number] -> Number
