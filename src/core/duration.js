@@ -15,6 +15,11 @@ export class Duration {
     return this.value > that.value;
   }
 
+  // Number -> Duration
+  multiply(num) {
+    return new Duration(this.value * num);
+  }
+
   // Duration -> Duration
   minus(that) {
     return new Duration(this.value - that.value)

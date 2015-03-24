@@ -52,10 +52,7 @@ export const rest = {
 }
 
 function createExpr(createPair) {
-  return (a, ...b) => {
-    console.log('reducing', a, b);
-    return _.reduce(b, createPair, a);
-  };
+  return (a, ...b) => _.reduce(b, createPair, a);
 }
 
 const internalSeq = createExpr((a, b) => new Sequence(a, b));

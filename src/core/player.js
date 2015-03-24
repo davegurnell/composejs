@@ -49,8 +49,6 @@ function instruments(score) {
 
 // ConfigObject ArrayOf(Instrument) -> MapOf(Instrument, PromiseOf(AudioBuffer))
 function loadInstruments(config, instruments) {
-  console.log('loadInstruments', instruments);
-
   let promises = _.map(instruments, (instrument) =>
     loadInstrument(config, instrument));
 
@@ -60,8 +58,6 @@ function loadInstruments(config, instruments) {
 
 // ConfigObject Instrument -> PromiseOf(AudioBuffer)
 function loadInstrument(config, instrument) {
-  console.log("loadInstrument", instrument);
-
   let url     = instrument;
   let request = new XMLHttpRequest();
   let result  = Q.defer();
